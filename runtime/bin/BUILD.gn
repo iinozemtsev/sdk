@@ -1193,3 +1193,289 @@ if (defined(is_linux) && is_linux && defined(is_asan) && is_asan &&
     }
   }
 }
+
+source_set("dart_embedder_source") {
+  include_dirs = [
+    "..",
+    "//third_party/boringssl/src/include",
+    "//third_party",
+  ]
+
+  configs += [ "//runtime:dart_config", "//runtime:dart_shared_lib" ]
+
+  sources = [
+    "//runtime/include/analyze_snapshot_api.h",
+    "//runtime/include/bin/dart_io_api.h",
+    "//runtime/include/bin/native_assets_api.h",
+    "//runtime/include/dart_api.h",
+    "//runtime/include/dart_api_dl.h",
+    "//runtime/include/dart_embedder_api.h",
+    "//runtime/include/dart_native_api.h",
+    "//runtime/include/dart_tools_api.h",
+    "//runtime/include/dart_version.h",
+    "//runtime/include/internal/dart_api_dl_impl.h",
+    "//runtime/platform/address_sanitizer.h",
+    "//runtime/platform/allocation.h",
+    "//runtime/platform/assert.h",
+    "//runtime/platform/atomic.h",
+    "//runtime/platform/elf.h",
+    "//runtime/platform/floating_point.h",
+    "//runtime/platform/floating_point_win.h",
+    "//runtime/platform/globals.h",
+    "//runtime/platform/growable_array.h",
+    "//runtime/platform/hashmap.h",
+    "//runtime/platform/leak_sanitizer.h",
+    "//runtime/platform/mach_o.h",
+    "//runtime/platform/memory_sanitizer.h",
+    "//runtime/platform/pe.h",
+    "//runtime/platform/priority_queue.h",
+    "//runtime/platform/safe_stack.h",
+    "//runtime/platform/signal_blocker.h",
+    "//runtime/platform/splay-tree-inl.h",
+    "//runtime/platform/splay-tree.h",
+    "//runtime/platform/synchronization.h",
+    "//runtime/platform/syslog.h",
+    "//runtime/platform/text_buffer.h",
+    "//runtime/platform/thread_sanitizer.h",
+    "//runtime/platform/threads.h",
+    "//runtime/platform/unaligned.h",
+    "//runtime/platform/undefined_behavior_sanitizer.h",
+    "//runtime/platform/unicode.h",
+    "//runtime/platform/unwinding_records.h",
+    "//runtime/platform/utils.h",
+    "//runtime/platform/utils_android.h",
+    "//runtime/platform/utils_fuchsia.h",
+    "//runtime/platform/utils_linux.h",
+    "//runtime/platform/utils_macos.h",
+    "//runtime/platform/utils_win.h",
+    "builtin.cc",
+    "builtin.h",
+    "builtin_natives.cc",
+    "console.h",
+    "console_posix.cc",
+    "console_win.cc",
+    "crashpad.h",
+    "crypto.cc",
+    "crypto.h",
+    "crypto_fuchsia.cc",
+    "crypto_linux.cc",
+    "crypto_macos.cc",
+    "crypto_win.cc",
+    "dart_embedder_api_impl.cc",
+    "dart_io_api_impl.cc",
+    "dartdev_isolate.h",
+    "dartutils.cc",
+    "dartutils.h",
+    "dfe.cc",
+    "dfe.h",
+    "directory.cc",
+    "directory.h",
+    "directory_fuchsia.cc",
+    "directory_linux.cc",
+    "directory_macos.cc",
+    "directory_win.cc",
+    "elf_loader.h",
+    "error_exit.h",
+    "eventhandler.cc",
+    "eventhandler.h",
+    "eventhandler_fuchsia.cc",
+    "eventhandler_fuchsia.h",
+    "eventhandler_linux.cc",
+    "eventhandler_linux.h",
+    "eventhandler_macos.cc",
+    "eventhandler_macos.h",
+    "eventhandler_win.cc",
+    "eventhandler_win.h",
+    "exe_utils.cc",
+    "exe_utils.h",
+    "fdutils.h",
+    "fdutils_fuchsia.cc",
+    "fdutils_linux.cc",
+    "fdutils_macos.cc",
+    "ffi_test/ffi_test_fields.h",
+    "file.cc",
+    "file.h",
+    "file_fuchsia.cc",
+    "file_linux.cc",
+    "file_macos.cc",
+    "file_support.cc",
+    "file_system_watcher.cc",
+    "file_system_watcher.h",
+    "file_system_watcher_fuchsia.cc",
+    "file_system_watcher_linux.cc",
+    "file_system_watcher_macos.cc",
+    "file_system_watcher_win.cc",
+    "file_win.cc",
+    "file_win.h",
+    "filter.cc",
+    "filter.h",
+    "gzip.cc",
+    "gzip.h",
+    "icu.h",
+    "ifaddrs.cc",
+    "ifaddrs.h",
+    "io_buffer.cc",
+    "io_buffer.h",
+    "io_natives.cc",
+    "io_natives.h",
+    "io_service.cc",
+    "io_service.h",
+    "io_service_no_ssl.cc",
+    "io_service_no_ssl.h",
+    "isolate_data.cc",
+    "isolate_data.h",
+    "loader.h",
+    "lockers.h",
+    "main_impl.h",
+    "main_options.h",
+    "namespace.cc",
+    "namespace.h",
+    "namespace_fuchsia.cc",
+    "namespace_fuchsia.h",
+    "namespace_linux.cc",
+    "namespace_macos.cc",
+    "namespace_win.cc",
+    "native_assets_api_impl.cc",
+    "options.h",
+    "platform.cc",
+    "platform.h",
+    "platform_fuchsia.cc",
+    "platform_linux.cc",
+    "platform_macos.cc",
+    "platform_macos.h",
+    "platform_macos_cocoa.h",
+    "platform_macos_cocoa.mm",
+    "platform_win.cc",
+    "process.cc",
+    "process.h",
+    "process_fuchsia.cc",
+    "process_linux.cc",
+    "process_macos.cc",
+    "process_win.cc",
+    "reference_counting.h",
+    "root_certificates_unsupported.cc",
+    "secure_socket_filter.cc",
+    "secure_socket_filter.h",
+    "secure_socket_unsupported.cc",
+    "secure_socket_utils.cc",
+    "secure_socket_utils.h",
+    "security_context.cc",
+    "security_context.h",
+    "security_context_fuchsia.cc",
+    "security_context_linux.cc",
+    "security_context_macos.cc",
+    "security_context_win.cc",
+    "snapshot_utils.h",
+    "socket.cc",
+    "socket.h",
+    "socket_base.cc",
+    "socket_base.h",
+    "socket_base_fuchsia.cc",
+    "socket_base_fuchsia.h",
+    "socket_base_linux.cc",
+    "socket_base_linux.h",
+    "socket_base_macos.cc",
+    "socket_base_macos.h",
+    "socket_base_posix.cc",
+    "socket_base_win.cc",
+    "socket_base_win.h",
+    "socket_fuchsia.cc",
+    "socket_linux.cc",
+    "socket_macos.cc",
+    "socket_win.cc",
+    "stdio.cc",
+    "stdio.h",
+    "stdio_fuchsia.cc",
+    "stdio_linux.cc",
+    "stdio_macos.cc",
+    "stdio_win.cc",
+    "sync_socket.cc",
+    "sync_socket.h",
+    "sync_socket_fuchsia.cc",
+    "sync_socket_linux.cc",
+    "sync_socket_macos.cc",
+    "sync_socket_win.cc",
+    "test_utils.h",
+    "thread.cc",
+    "thread.h",
+    "thread_absl.cc",
+    "thread_fuchsia.cc",
+    "thread_linux.cc",
+    "thread_macos.cc",
+    "thread_win.cc",
+    "typed_data_utils.cc",
+    "typed_data_utils.h",
+    "uri.cc",
+    "uri.h",
+    "utils.cc",
+    "utils.h",
+    "utils_fuchsia.cc",
+    "utils_linux.cc",
+    "utils_macos.cc",
+    "utils_win.cc",
+    "utils_win.h",
+    "virtual_memory.h",
+    "vmservice_impl.cc",
+    "vmservice_impl.h",
+  ]
+
+  deps = [
+    "//runtime/bin:dart_kernel_platform_cc",
+    "//third_party/boringssl",
+    "//third_party/zlib",
+  ]
+}
+
+source_set("simple_embedder_source") {
+  include_dirs = [ ".." ]
+  sources = [
+    "simple_embedder.cc",
+    "simple_embedder.h",
+  ]
+}
+
+source_set("embedder_demo_source") {
+  include_dirs = [".."]
+  sources = [ "embedder_demo.cc" ]
+  frameworks = [ "Foundation.framework", "Security.framework" ]
+}
+
+executable("embedder_demo") {
+  configs += [
+    "..:dart_config",
+  ]
+  deps = [
+    ":dart_embedder_source",
+    ":embedder_demo_source",
+    ":simple_embedder_source",
+    "//runtime:libdart_jit",
+  ]
+}
+
+if (is_ios) {
+  prebuilt_dart_action("dart_jit_framework") {
+    deps = [ "//runtime/platform/apple/framework:dart_framework_dylib" ]
+    script = "//runtime/platform/apple/framework/create_framework.dart"
+    headers = [
+      "//runtime/platform/apple/framework/Headers/Dart.h",
+      "//runtime/platform/apple/framework/Headers/DartVM.h",
+    ]
+
+    inputs = [ "$root_out_dir/libDart.dylib" ]
+    framework_name = "Dart"
+    output = "$root_out_dir/$framework_name.framework"
+    outputs = [ output ]
+
+    args = [
+      "--library=" + rebase_path("$root_out_dir/libDart.dylib"),
+      "--output=" + rebase_path(output),
+      "--framework_name=$framework_name",
+      "--resources=/Users/iinozemtsev/misc/send_string.dill:assets/app.dill",
+    ]
+
+    inputs += headers
+    foreach(header, headers) {
+      args += [ "--headers=" + rebase_path(header) ]
+    }
+  }
+}

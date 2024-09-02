@@ -1,0 +1,77 @@
+# import("//build/dart/dart_action.gni")
+import("//runtime/configs.gni")
+
+source_set("dart_framework_source") {
+  deps = [
+    # ":libdart_jit",
+    # "//runtime/bin:dart_set",
+    # "//runtime/bin:libdart_builtin",
+    # "//runtime/platform:libdart_platform_jit",
+  ]
+
+  sources = [
+    "Headers/Dart.h",
+    "Headers/DartVM.h",
+    "Sources/DartVM.mm",
+  ]
+
+  # public_configs = [
+  #   "//runtime:dart_public_config",
+  #   "//runtime:dart_shared_lib",
+  # ]
+
+  frameworks = [ "Foundation.framework", "Security.framework" ]
+}
+
+shared_library("dart_framework_dylib") {
+  output_name = "Dart"
+
+  ldflags = [ "-Wl,-install_name,@rpath/Dart.framework/Dart" ]
+
+  cflags = [ "-Wno-unused-private-field" ]
+
+  public = [
+    "platform/apple/framework/Headers/Dart.h",
+    "platform/apple/framework/Headers/DartVM.h",
+  ]
+
+  deps = [
+    "//runtime:libdart_jit",
+    "//runtime/bin:dart_embedder_source",
+    "//runtime/bin:simple_embedder_source",
+    ":dart_framework_source",
+  ]
+
+  public_configs = [
+    "//runtime:dart_public_config",
+    "//runtime:dart_shared_lib",
+  ]
+}
+
+# if (is_ios) {
+#   prebuilt_dart_action("dart_jit_framework") {
+#     deps = [ ":dart_framework_dylib" ]
+#     script = "../tools/create_framework.dart"
+#     headers = [
+#       "platform/apple/framework/Headers/Dart.h",
+#       "platform/apple/framework/Headers/DartVM.h",
+#     ]
+
+#     inputs = [ "$root_out_dir/libDart.dylib" ]
+#     framework_name = "Dart"
+#     output = "$root_out_dir/$framework_name.framework"
+#     outputs = [ output ]
+
+#     args = [
+#       "--library=" + rebase_path("$root_out_dir/libDart.dylib"),
+#       "--output=" + rebase_path(output),
+#       "--framework_name=$framework_name",
+#       "--resources=/Users/iinozemtsev/misc/send_string.dill:assets/app.dill",
+#     ]
+
+#     inputs += headers
+#     foreach(header, headers) {
+#       args += [ "--headers=" + rebase_path(header) ]
+#     }
+#   }
+# }
