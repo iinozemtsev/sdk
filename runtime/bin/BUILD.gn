@@ -1228,3 +1228,31 @@ static_library("dart_embedder_runtime_jit") {
   output_name = "dart_embedder_runtime_jit"
   deps = [ ":dart_embedder_runtime_jit_set" ]
 }
+
+if (is_ios) {
+  prebuilt_dart_action("dart_jit_framework") {
+    deps = [ "//runtime/platform/apple/framework:dart_framework_dylib" ]
+    script = "//runtime/platform/apple/framework/create_framework.dart"
+    headers = [
+      "//runtime/platform/apple/framework/Headers/Dart.h",
+      "//runtime/platform/apple/framework/Headers/DartVM.h",
+    ]
+
+    inputs = [ "$root_out_dir/libDart.dylib" ]
+    framework_name = "Dart"
+    output = "$root_out_dir/$framework_name.framework"
+    outputs = [ output ]
+
+    args = [
+      "--library=" + rebase_path("$root_out_dir/libDart.dylib"),
+      "--output=" + rebase_path(output),
+      "--framework_name=$framework_name",
+      "--resources=/tmp/embeddee.dill:assets/app.dill",
+    ]
+
+    inputs += headers
+    foreach(header, headers) {
+      args += [ "--headers=" + rebase_path(header) ]
+    }
+  }
+}

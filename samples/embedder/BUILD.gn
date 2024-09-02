@@ -136,3 +136,29 @@ sample("run_timer_async") {
 snapshots("timer") {
   main_dart = "timer.dart"
 }
+
+source_set("generated_for_timer_set") {
+  sources = [ "generated_for_timer.h","generated_for_timer.cc" ]
+  include_dirs = ["../../runtime", "../../runtime/easy_embedder"]
+}
+
+shared_library("generated_for_timer") {
+  deps = [ ":generated_for_timer_set" ]
+
+  if (is_mac) {
+    ldflags = [ "-Wl,-install_name,@rpath/libgenerated_for_timer.dylib" ]
+  }
+}
+
+executable("run_timer_shared_kernel") {
+  include_dirs = [
+    "../../runtime",
+    "../../runtime/easy_embedder",
+  ]
+  sources = [ "run_timer_shared.cc" ]
+  deps = [
+    ":generated_for_timer",
+    "../../runtime/easy_embedder:easy_embedder_jit_shared",
+  ]
+  data_deps = [":timer_kernel"]
+}

@@ -31,3 +31,6 @@ void resetTimer() {
 
 @pragma('vm:entry-point')
 int get ticks => _tickCount;
+
+@pragma('vm:entry-point')
+String greet(String person) => '$person, hello from Dart!';
