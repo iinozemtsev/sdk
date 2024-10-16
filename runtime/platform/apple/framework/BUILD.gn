@@ -2,6 +2,7 @@
 import("//runtime/configs.gni")
 
 source_set("dart_framework_source") {
+  include_dirs = [ "//runtime" ]
   deps = [
     # ":libdart_jit",
     # "//runtime/bin:dart_set",
