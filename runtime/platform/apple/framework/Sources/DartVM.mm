@@ -11,25 +11,58 @@ static NSString* GetKernelPath(NSBundle* bundle, NSString* snapshotPath) {
                           ofType:nil];
 }
 
-@implementation DartVM
+@implementation GeneratedForSendString 
+
+- (NSString*)GimmeString {
+  dart::embedder::simple::DartResult<std::string> result = ((dart::embedder::simple::GeneratedForSendString*)handle)->gimmeString();
+  if (result.is_error) {
+    NSLog(@"Dart Error: %s", result.error.c_str());
+    return nil;
+  }
+  return [NSString stringWithUTF8String:result.value.c_str()];
+}
+
+- (NSString*)Greet:(NSString*)name {
+  return @"Unimplemented";
+}
+
+
+@end
+
+@implementation DartVM {
+  dart::embedder::simple::DartEmbedder* embedder;
+}
 
 - (bool)start {
   NSLog(@"Starting Dart VM");
-
-  NSString* kernelPath = GetKernelPath([NSBundle mainBundle], nil);
-  NSData* kernelData = [NSData dataWithContentsOfFile:kernelPath];
-  NSLog(@"kernel path is %@", kernelPath);
-  NSLog(@"kernel size is %lu",
-        static_cast<unsigned long>([kernelData length]));
-
+  embedder = new dart::embedder::simple::DartEmbedder();
   char* error;
-  if (!dart::embedder::simple::Run(static_cast<const char*>([kernelData bytes]), [kernelData length],
-                                   &error)) {
+  if (!embedder->Init(&error)) {
     NSLog(@"Dart Error: %s", error);
     return false;
   }
 
   return true;
+}
+
+- (GeneratedForSendString*)LoadGeneratedForSendString {
+  NSString* kernelPath = GetKernelPath([NSBundle mainBundle], nil);
+  NSData* kernelData = [NSData dataWithContentsOfFile:kernelPath];
+
+  dart::embedder::simple::SnapshotData* snapshot_data = new dart::embedder::simple::SnapshotData();
+  snapshot_data->name = "sendString";
+  snapshot_data->bytes = static_cast<const char*>([kernelData bytes]);
+  snapshot_data->size = [kernelData length];
+  char* error;
+  dart::embedder::simple::IsolateHandle* isolate = embedder->IsolateGroupFromKernel(*snapshot_data, &error);
+
+  if (isolate == nullptr) {
+    NSLog(@"Dart Error: %s", error);
+  }
+  
+  GeneratedForSendString* result = [GeneratedForSendString alloc];
+  result->handle = new dart::embedder::simple::GeneratedForSendString(isolate);
+  return result;
 }
 
 @end
