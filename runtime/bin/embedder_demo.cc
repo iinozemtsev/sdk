@@ -3,6 +3,9 @@
 #include <fstream>
 #include <iostream>
 #include <string_view>
+#include <thread>
+#include "generated_for_send_string.h"
+#include "include/dart_api.h"
 #include "platform/assert.h"
 #include "platform/utils.h"
 #include "simple_embedder.h"
@@ -13,6 +16,7 @@
 // };
 
 using dart::embedder::simple::SnapshotData;
+using dart::send_string::GeneratedForSendString;
 
 SnapshotData read_file(std::string_view path, std::string_view name) {
   std::string path_string{path};
@@ -30,29 +34,7 @@ SnapshotData read_file(std::string_view path, std::string_view name) {
   return result;
 }
 
-int main() {
-  SnapshotData data =
-      read_file("/Users/iinozemtsev/misc/send_string.dill", "send_string");
-  // SnapshotData vm_platform = read_file(
-  //     "/Users/iinozemtsev/work/dart-sdk-multiplat/sdk/xcodebuild/DebugARM64/"
-  //     "dart-sdk/lib/_internal/vm_platform_strong.dill");
-  dart::embedder::simple::DartEmbedder embedder;
-  char* error;
-
-  if (!embedder.Init(&error)) {
-    std::cout << "Failed to run embedder: " << error << std::endl;
-    return 1;
-  }
-
-  dart::embedder::simple::IsolateHandle* isolate =
-      embedder.IsolateGroupFromKernel(data, &error);
-  if (isolate == nullptr) {
-    std::cout << "Failed to run embedder: " << error << std::endl;
-    return 1;
-  }
-
-  dart::embedder::simple::GeneratedForSendString send_string(isolate);
-
+int Greetings(GeneratedForSendString& send_string) {
   auto result = send_string.gimmeString();
   if (result.is_error) {
     std::cout << "Failed call Dart: " << result.error << std::endl;
@@ -69,12 +51,38 @@ int main() {
   }
 
   std::cout << "Dart says: " << greet_result.value << std::endl;
-
-  // if (!dart::embedder::simple::Run(data.bytes, data.size,
-  //                                  // vm_platform.bytes, vm_platform.length,
-  //                                  &error)) {
-  //   std::cout << "Failed to run embedder: " << error << std::endl;
-  // }
-
   return 0;
 }
+
+int main() {
+  SnapshotData data =
+      read_file("/Users/iinozemtsev/misc/send_string.dill", "send_string");
+  dart::embedder::simple::DartEmbedder embedder;
+  char* error;
+
+  if (!embedder.Init(&error)) {
+    std::cout << "Failed to run embedder: " << error << std::endl;
+    return 1;
+  }
+
+  dart::embedder::simple::IsolateHandle* isolate =
+      embedder.IsolateGroupFromKernel(data, &error);
+  if (isolate == nullptr) {
+    std::cout << "Failed to run embedder: " << error << std::endl;
+    return 1;
+  }
+
+  GeneratedForSendString send_string(isolate);
+  std::cout << "Current ticks: " << send_string.GetTicks().value_or_die() << std::endl;
+
+  send_string.StartTimer().check_ok();
+  std::cout << "Started timer" << std::endl;
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::cout << "Ticks after 100 ms: " << send_string.GetTicks().value_or_die() << std::endl;
+
+  // TODO: use Dart_SetMessageNotifyCallback
+  Dart_EnterIsolate(send_string.isolate_->isolate_);
+  //return Greetings(send_string);
+}
+
+

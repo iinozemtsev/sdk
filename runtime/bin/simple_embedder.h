@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <vector>
 #include "include/dart_api.h"
+#include "platform/assert.h"
 #include "platform/utils.h"
 
 namespace dart::embedder::simple {
@@ -58,6 +59,13 @@ struct DartResult {
   std::string error;
   bool is_error;
 
+  T& value_or_die() {
+    if (is_error) {
+      FATAL("DartResult has an error: %s", error.c_str());
+    }
+    return value;
+  }
+
   static DartResult<T> Error(std::string_view error) {
     DartResult<T> result;
     result.error = std::string(error);
@@ -80,81 +88,27 @@ struct DartResult {
   }
 };
 
-class GeneratedForSendString {
- public:
-  GeneratedForSendString(IsolateHandle* isolate) : isolate_(isolate){};
+// Void
+struct VoidDartResult {
+  std::string error;
+  bool is_error;
 
-  IsolateHandle* isolate_;
-
-  DartResult<std::string> gimmeString() {
-    std::string error;
-    Dart_EnterIsolate(isolate_->isolate_);
-    Dart_EnterScope();
-    Dart_Handle invoke_result =
-        Dart_Invoke(isolate_->library_,
-                    Dart_NewStringFromCString("gimmeString"), 0, nullptr);
-    if (Dart_IsError(invoke_result)) {
-      error = Utils::StrDup(Dart_GetError(invoke_result));
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error(error);
+  void check_ok() {
+    if (is_error) {
+      FATAL("DartResult has an error: %s", error.c_str());
     }
+  }
 
-    if (!Dart_IsString(invoke_result)) {
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error("Return type is not string ");
-    }
-
-    const char* return_value;
-    Dart_Handle to_string_result =
-        Dart_StringToCString(invoke_result, &return_value);
-    if (Dart_IsError(to_string_result)) {
-      error = Utils::StrDup(Dart_GetError(to_string_result));
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error(error);
-    }
-    auto result = DartResult<std::string>::Success(std::string(return_value));
-    Dart_ExitScope();
-    Dart_ExitIsolate();
+  static VoidDartResult Error(std::string_view error) {
+    VoidDartResult result;
+    result.error = std::string(error);
+    result.is_error = true;
     return result;
   }
 
-  DartResult<std::string> greet(std::string_view person) {
-    std::string error;
-    Dart_EnterIsolate(isolate_->isolate_);
-    Dart_EnterScope();
-    std::initializer_list<Dart_Handle> args{
-        Dart_NewStringFromCString(std::string(person).c_str())};
-    Dart_Handle invoke_result =
-        Dart_Invoke(isolate_->library_, Dart_NewStringFromCString("greet"),
-                    args.size(), const_cast<Dart_Handle*>(args.begin()));
-    if (Dart_IsError(invoke_result)) {
-      error = Utils::StrDup(Dart_GetError(invoke_result));
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error(error);
-    }
-
-    if (!Dart_IsString(invoke_result)) {
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error("Return type is not string ");
-    }
-
-    const char* return_value;
-    Dart_Handle dart_result =
-        Dart_StringToCString(invoke_result, &return_value);
-    if (Dart_IsError(dart_result)) {
-      error = Utils::StrDup(Dart_GetError(dart_result));
-      Dart_ExitScope();
-      Dart_ExitIsolate();
-      return DartResult<std::string>::Error(error);
-    }
-    auto result = DartResult<std::string>::Success(std::string(return_value));
-    Dart_ExitScope();
-    Dart_ExitIsolate();
+  static VoidDartResult Success() {
+    VoidDartResult result;
+    result.is_error = false;
     return result;
   }
 };

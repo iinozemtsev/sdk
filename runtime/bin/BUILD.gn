@@ -1440,6 +1440,12 @@ source_set("embedder_demo_source") {
   frameworks = [ "Foundation.framework", "Security.framework" ]
 }
 
+source_set("generated_for_send_string") {
+  include_dirs = [".."]
+  sources = [ "generated_for_send_string.h" ]
+  deps = [":simple_embedder_source"]
+
+}
 executable("embedder_demo") {
   configs += [
     "..:dart_config",
@@ -1447,6 +1453,7 @@ executable("embedder_demo") {
   deps = [
     ":dart_embedder_source",
     ":embedder_demo_source",
+    ":generated_for_send_string",
     ":simple_embedder_source",
     "//runtime:libdart_jit",
   ]
