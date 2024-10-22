@@ -158,7 +158,7 @@ class GeneratedForSendString {
     Dart_EnterScope();
     Dart_Handle invoke_result =
         Dart_Invoke(isolate_->library_,
-                    Dart_NewStringFromCString("startTicker"), 0, nullptr);
+                    Dart_NewStringFromCString("stopTicker"), 0, nullptr);
     if (Dart_IsError(invoke_result)) {
       error = Utils::StrDup(Dart_GetError(invoke_result));
       Dart_ExitScope();

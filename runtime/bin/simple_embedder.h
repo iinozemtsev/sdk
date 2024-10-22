@@ -36,8 +36,11 @@ class DartEmbedder {
  public:
   bool Init(char** error);
 
-  IsolateHandle* IsolateGroupFromKernel(const SnapshotData& snapshot_data,
-                                        char** error);
+  IsolateHandle* IsolateGroupFromKernel(
+      const SnapshotData& snapshot_data,
+      char** error,
+      Dart_MessageNotifyCallback message_notify_callback,
+      void* isolate_data);
 
   void Shutdown();
 

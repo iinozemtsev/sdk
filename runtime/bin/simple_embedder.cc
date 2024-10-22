@@ -197,7 +197,9 @@ bool DartEmbedder::Init(char** error) {
 
 IsolateHandle* DartEmbedder::IsolateGroupFromKernel(
     const SnapshotData& snapshot_data,
-    char** error) {
+    char** error,
+    Dart_MessageNotifyCallback message_notify_callback,
+    void* isolate_data) {
   if (!initialized_) {
     *error = Utils::StrDup("Embedder is not initialized");
     return nullptr;
@@ -213,9 +215,13 @@ IsolateHandle* DartEmbedder::IsolateGroupFromKernel(
       snapshot_data.size,
       /*flags=*/&isolate_flags,
       /*isolate_group_data=*/nullptr,
-      /*isolate_data=*/nullptr, error);
+      /*isolate_data=*/isolate_data, error);
   if (isolate == nullptr) {
     return nullptr;
+  }
+  if (message_notify_callback != nullptr) {
+    Dart_SetMessageNotifyCallback(message_notify_callback);
+    std::cout << "Message notify callback is set" << std::endl;
   }
   USE(isolate);
   LOG("Entering scope");

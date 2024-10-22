@@ -6,6 +6,7 @@ void helloWorld() {
 }
 
 var hwCalled = false;
+
 String gimmeString() {
   hwCalled = true;
   return 'Hello, world! I am string from Dart';
@@ -15,10 +16,12 @@ var _tickCount = 0;
 Timer? _tickTimer;
 
 void startTicker() {
-  if (_tickTimer != null) {
+  print('starting ticker, timer: $_tickTimer');
+  if (_tickTimer == null) {
     _tickTimer = Timer.periodic(const Duration(milliseconds: 1), (_) {
       _tickCount++;
     });
+    print('Started ticker');
   }
 }
 
