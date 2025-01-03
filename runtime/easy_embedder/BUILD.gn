@@ -1,0 +1,119 @@
+source_set("easy_embedder_jit_set") {
+  include_dirs = [
+    ".",
+    "..",
+    "//third_party/boringssl/src/include",
+    "//third_party",
+  ]
+
+  configs += [
+    "..:dart_arch_config",
+    "..:dart_config",
+    "..:dart_os_config",
+  ]
+
+  sources = [
+    "../bin/dart_embedder_api_impl.cc",
+    "../bin/vmservice_impl.cc",
+    "../bin/vmservice_impl.h",
+    "easy_embedder.cc",
+    "easy_embedder.h",
+    "easy_embedder_api_impl.cc",
+    "easy_embedder_jit.cc",
+  ]
+
+  deps = [
+    "..:libdart_jit",
+    "../bin:dart_io_api",
+    "../bin:dart_kernel_platform_cc",
+    "../bin:libdart_builtin",
+  ]
+}
+
+source_set("easy_embedder_aot_set") {
+  include_dirs = [
+    ".",
+    "..",
+    "//third_party/boringssl/src/include",
+    "//third_party",
+  ]
+
+  sources = [
+    "../bin/dart_embedder_api_impl.cc",
+    "../bin/dfe.cc",
+    "../bin/dfe.h",
+    "../bin/elf_loader.cc",
+    "../bin/elf_loader.h",
+    "../bin/error_exit.cc",
+    "../bin/error_exit.h",
+    "../bin/virtual_memory.h",
+    "../bin/virtual_memory_fuchsia.cc",
+    "../bin/virtual_memory_posix.cc",
+    "../bin/virtual_memory_win.cc",
+    "../bin/vmservice_impl.cc",
+    "../bin/vmservice_impl.h",
+    "easy_embedder.cc",
+    "easy_embedder.h",
+    "easy_embedder_aot.cc",
+    "easy_embedder_api_impl.cc",
+  ]
+
+  configs += [
+    "..:dart_aotruntime_config",
+    "..:dart_arch_config",
+    "..:dart_config",
+    "..:dart_os_config",
+  ]
+
+  deps = [
+    "..:libdart_aotruntime",
+    "../bin:dart_io_api",
+
+    # "../bin:dart_kernel_platform_cc",
+    "../bin:libdart_builtin",
+  ]
+}
+
+shared_library("easy_embedder_jit_shared") {
+  deps = [ ":easy_embedder_jit_set" ]
+
+  if (is_mac) {
+    ldflags = [ "-Wl,-install_name,@rpath/libeasy_embedder_jit_shared.dylib" ]
+  }
+
+  if (is_win) {
+    ldflags = [ "/EXPORT:Dart_True" ]
+
+    libs = [
+      "ole32.lib",
+      "iphlpapi.lib",
+      "psapi.lib",
+      "ws2_32.lib",
+      "Rpcrt4.lib",
+      "shlwapi.lib",
+      "winmm.lib",
+    ]
+  }
+}
+
+shared_library("easy_embedder_aot_shared") {
+  deps = [ ":easy_embedder_aot_set" ]
+
+  if (is_mac) {
+    ldflags = [ "-Wl,-install_name,@rpath/libeasy_embedder_aot_shared.dylib" ]
+  }
+
+  if (is_win) {
+    ldflags = [ "/EXPORT:Dart_True" ]
+
+    libs = [
+      "ole32.lib",
+      "iphlpapi.lib",
+      "psapi.lib",
+      "ws2_32.lib",
+      "Rpcrt4.lib",
+      "shlwapi.lib",
+      "winmm.lib",
+    ]
+  }
+}
