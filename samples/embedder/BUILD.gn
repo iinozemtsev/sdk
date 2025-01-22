@@ -23,7 +23,10 @@ group("aot") {
 
   # FFI can't execute on the VM's simulator
   if (dart_target_arch == host_cpu) {
-    deps += [ ":run_futures_aot" ]
+    deps += [
+      ":run_futures_aot",
+      ":run_isolates_aot",
+    ]
   }
 }
 
@@ -37,7 +40,10 @@ group("kernel") {
 
   # FFI can't execute on the VM's simulator
   if (dart_target_arch == host_cpu) {
-    deps += [ ":run_futures_kernel" ]
+    deps += [
+      ":run_futures_kernel",
+      ":run_isolates_kernel",
+    ]
   }
 }
 
@@ -170,5 +176,14 @@ if (dart_target_arch == host_cpu) {
   sample("run_futures") {
     sources = [ "run_futures.cc" ]
     snapshots = [ ":futures" ]
+  }
+
+  sample("run_isolates") {
+    sources = [ "run_isolates.cc" ]
+    snapshots = [ ":isolates" ]
+  }
+
+  snapshots("isolates") {
+    main_dart = "isolates.dart"
   }
 }
