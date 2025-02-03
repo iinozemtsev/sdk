@@ -172,3 +172,138 @@ if (dart_target_arch == host_cpu) {
     snapshots = [ ":futures" ]
   }
 }
+source_set("generated_for_timer_set") {
+  sources = [
+    "generated_for_timer.cc",
+    "generated_for_timer.h",
+  ]
+  include_dirs = [
+    "../../runtime",
+    "../../runtime/engine",
+  ]
+}
+
+shared_library("generated_for_timer") {
+  deps = [ ":generated_for_timer_set" ]
+
+  if (is_mac) {
+    ldflags = [ "-Wl,-install_name,@rpath/libgenerated_for_timer.dylib" ]
+  }
+
+  if (is_ios) {
+    ldflags = [
+      "-undefined",
+      "dynamic_lookup",
+    ]
+  }
+}
+
+executable("run_timer_shared_kernel") {
+  include_dirs = [
+    "../../runtime",
+    "../../runtime/engine",
+  ]
+  sources = [ "run_timer_shared.cc" ]
+  deps = [
+    ":generated_for_timer",
+    "../../runtime/engine:dart_engine_jit_shared",
+  ]
+  data_deps = [ ":timer_kernel" ]
+}
+
+template("dart_ios_framework") {
+  assert(defined(invoker.shared_library), "Must have shared_library attribute")
+  assert(defined(invoker.headers), "Must have headers attribute")
+  assert(defined(invoker.framework_name), "Must have framework name")
+
+  shared_library_name = get_label_info(invoker.shared_library, "name")
+  dylib_name = "lib$shared_library_name.dylib"
+
+  prebuilt_dart_action(target_name) {
+    deps = [ invoker.shared_library ]
+
+    # resources is a list of scopes, where each scope has src, dest,
+    # and dep.
+    resources_args = []
+    if (defined(invoker.resources)) {
+      foreach(resource, invoker.resources) {
+        deps += [ resource.dep ]
+        src = rebase_path("$root_out_dir/${resource.src}")
+        resources_args += [ "--resources=$src:${resource.dst}" ]
+      }
+    }
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+    script = "../../tools/create_framework.dart"
+    headers = invoker.headers
+
+    inputs = [
+      "$root_out_dir/$dylib_name",
+      "../../tools/create_framework.dart",
+    ]
+    framework_name = invoker.framework_name
+    output = "$root_out_dir/$framework_name.framework"
+    outputs = [ output ]
+
+    args = [
+      "--library=" + rebase_path("$root_out_dir/$dylib_name"),
+      "--output=" + rebase_path(output),
+      "--framework_name=$framework_name",
+      "--create_umbrella_header",
+    ]
+
+    if (resources_args != []) {
+      args += resources_args
+    }
+
+    inputs += headers
+    foreach(header, headers) {
+      args += [ "--headers=" + rebase_path(header) ]
+    }
+  }
+}
+
+dart_ios_framework("dart_timer_jit") {
+  shared_library = ":generated_for_timer"
+  headers = [ "generated_for_timer.h" ]
+  framework_name = "DartTimer"
+  resources = [
+    {
+      dep = ":timer_kernel"
+      src = "gen/timer_kernel.dart.snapshot"
+      dst = "assets/snapshot"
+    },
+  ]
+}
+
+dart_ios_framework("dart_timer_aot") {
+  shared_library = ":generated_for_timer"
+  headers = [ "generated_for_timer.h" ]
+  framework_name = "DartTimerAot"
+  resources = [
+    {
+      dep = ":timer_aot"
+      src = "timer_aot.snapshot"
+      dst = "assets/snapshot"
+    },
+  ]
+}
+
+dart_ios_framework("dart") {
+  shared_library = "../../runtime/engine:dart_engine_jit_shared"
+  headers = [
+    "../../runtime/include/dart_api.h",
+    "../../runtime/engine/include/dart_engine.h",
+  ]
+  framework_name = "Dart"
+}
+
+dart_ios_framework("dart_aot") {
+  shared_library = "../../runtime/engine:dart_engine_aot_shared"
+  headers = [
+    "../../runtime/include/dart_api.h",
+    "../../runtime/engine/include/dart_engine.h",
+  ]
+  framework_name = "DartAot"
+}
