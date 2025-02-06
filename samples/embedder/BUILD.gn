@@ -150,3 +150,12 @@ sample("run_timer_async") {
 snapshots("timer") {
   main_dart = "timer.dart"
 }
+
+snapshots("streams_and_futures") {
+  main_dart = "streams_and_futures.dart"
+}
+
+sample("run_streams_and_futures") {
+  sources = [ "run_streams_and_futures.cc" ]
+  snapshots = [ ":streams_and_futures" ]
+}
