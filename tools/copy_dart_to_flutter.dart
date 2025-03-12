@@ -132,6 +132,7 @@ void main(List<String> args) async {
   if (options.flag(_buildSdk)) {
     stdout.writeln('Building the Dart SDK...');
     await _runCommand('./tools/build.py', [
+      '-nvh',
       '-mrelease',
       'create_sdk',
     ], workingDirectory: localDartSdk);

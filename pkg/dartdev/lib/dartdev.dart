@@ -11,6 +11,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:dart_style/src/cli/format_command.dart';
+import 'package:dartdev/src/commands/assemble.dart';
 import 'package:meta/meta.dart';
 import 'package:pub/pub.dart';
 import 'package:unified_analytics/unified_analytics.dart';
@@ -127,6 +128,7 @@ class DartdevRunner extends CommandRunner<int> {
       nativeAssetsExperimentEnabled: nativeAssetsExperimentEnabled,
     ));
     addCommand(ToolingDaemonCommand(verbose: verbose));
+    addCommand(AssembleCommand(verbose: verbose));
   }
 
   @visibleForTesting

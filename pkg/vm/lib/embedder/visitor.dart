@@ -5,7 +5,6 @@
 import 'package:kernel/ast.dart';
 import 'package:kernel/core_types.dart' show CoreTypes;
 import 'package:kernel/target/targets.dart' show TargetFlags;
-import 'package:kernel/visitor.dart' show TreeVisitorDefault;
 import 'package:vm/modular/target/vm.dart' show VmTarget;
 import 'package:vm/transformations/pragma.dart';
 
@@ -41,20 +40,19 @@ EntryPointShimCollector visitLibrary(
 }
 
 class EntryPointShimVisitor extends RecursiveVisitor {
-  final CoreTypes _coreTypes;
   final Library _library;
   final EntryPointShimCollector _collector;
   final bool _createUninitializedInstances;
   final PragmaAnnotationParser _pragmaParser;
 
   EntryPointShimVisitor(
-    this._coreTypes,
+    CoreTypes coreTypes,
     this._library,
     this._collector, {
     bool createUninitializedInstanceMethods = false,
   }) : _createUninitializedInstances = createUninitializedInstanceMethods,
        _pragmaParser = ConstantPragmaAnnotationParser(
-         _coreTypes,
+         coreTypes,
          VmTarget(const TargetFlags()),
        );
 
@@ -74,7 +72,7 @@ class EntryPointShimVisitor extends RecursiveVisitor {
         );
     if (pragmas.isEmpty) return null;
     var pragma = pragmas.first;
-    if (pragma != PragmaEntryPointType.Default) {
+    if (pragma.type != PragmaEntryPointType.Default) {
       for (final p in pragmas.skip(1)) {
         if (p.type == PragmaEntryPointType.Default) {
           pragma = p;
@@ -94,15 +92,17 @@ class EntryPointShimVisitor extends RecursiveVisitor {
     if (pragma != null) {
       assert(pragma.type != PragmaEntryPointType.CallOnly);
       assert(!field.isFinal || pragma.type != PragmaEntryPointType.SetterOnly);
-      _collector.addAll(field.reference, {
-        if (_allowsGet(pragma)) ...{
+      if (_allowsGet(pragma)) {
+        _collector.addAll(field.getterReference, {
           EntryPointRole.getter,
           // If the field's value has a Function type, then the value can be
           // both retrieved and invoked using a single Dart_Invoke call.
           if (field.getterType is FunctionType) EntryPointRole.call,
-        },
-        if (_allowsSet(pragma)) EntryPointRole.setter,
-      });
+        });
+      }
+      if (_allowsSet(pragma)) {
+        _collector.add(field.setterReference!, EntryPointRole.setter);
+      }
     }
     super.visitField(field);
   }

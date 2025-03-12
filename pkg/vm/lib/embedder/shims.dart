@@ -14,12 +14,26 @@ void _convertDartTypeToC(
     buffer.write('Dart_Handle');
   } else if (type is VoidType) {
     buffer.write('void');
-  } else if (type == coreTypes?.intNonNullableRawType) {
+  } else if (type == coreTypes.intNonNullableRawType) {
     buffer.write('int64_t');
-  } else if (type == coreTypes?.doubleNonNullableRawType) {
+  } else if (type == coreTypes.doubleNonNullableRawType) {
     buffer.write('double');
   } else {
     buffer.write('Dart_Handle');
+  }
+}
+
+String _getCReturnType(CoreTypes? coreTypes, DartType type) {
+  if (coreTypes == null) {
+    return 'Dart_Handle';
+  } else if (type is VoidType) {
+    return 'void';
+  } else if (type == coreTypes!.intNonNullableRawType) {
+    return 'int64_t';
+  } else if (type == coreTypes!.doubleNonNullableRawType) {
+    return 'double';
+  } else {
+    return 'Dart_Handle';
   }
 }
 
@@ -30,11 +44,11 @@ void _convertCValueToDart(
   void Function(StringBuffer) bodyWriter,
 ) {
   assert(type is! VoidType);
-  if (type == coreTypes?.intNonNullableRawType) {
+  if (type == coreTypes.intNonNullableRawType) {
     buffer.write('Dart_NewInteger(');
     bodyWriter(buffer);
     buffer.write(')');
-  } else if (type == coreTypes?.doubleNonNullableRawType) {
+  } else if (type == coreTypes.doubleNonNullableRawType) {
     buffer.write('Dart_NewDouble(');
     bodyWriter(buffer);
     buffer.write(')');
@@ -53,11 +67,11 @@ void _convertDartValueToC(
     buffer.write('CheckError(');
     bodyWriter(buffer);
     buffer.write(')');
-  } else if (type == coreTypes?.intNonNullableRawType) {
+  } else if (type == coreTypes.intNonNullableRawType) {
     buffer.write('IntFromHandle(');
     bodyWriter(buffer);
     buffer.write(')');
-  } else if (type == coreTypes?.doubleNonNullableRawType) {
+  } else if (type == coreTypes.doubleNonNullableRawType) {
     buffer.write('DoubleFromHandle(');
     bodyWriter(buffer);
     buffer.write(')');
@@ -199,7 +213,7 @@ abstract class EntryPointFunctionShim {
     if (!_cachedPrefixedNames.containsKey(node.reference)) {
       String prefixedName = _baseName(node);
       if (node is Member) {
-        final cls = (node as Member).enclosingClass;
+        final cls = node.enclosingClass;
         if (cls != null) {
           final prefix = _prefixedName(cls);
           if (prefixedName.isEmpty || prefixedName == '_') {
@@ -372,7 +386,7 @@ class EntryPointClosureShim extends EntryPointGetterShim {
     Procedure node,
     CoreTypes coreTypes,
   ) {
-    assert(node is Procedure && !node.isGetter && !node.isFactory);
+    assert(!node.isGetter && !node.isFactory);
     return EntryPointClosureShim._(node: node, coreTypes: coreTypes);
   }
 
@@ -558,7 +572,7 @@ class EntryPointInitializationShim extends EntryPointFunctionShim {
         node: node,
         target: EntryPointShimValueParameter._(
           "_instance",
-          type: node.enclosingClass!.getThisType(
+          type: node.enclosingClass.getThisType(
             coreTypes,
             Nullability.nonNullable,
           ),
@@ -653,10 +667,18 @@ class EntryPointCallShim extends EntryPointFunctionShim {
 
   @override
   void _writeReturnBody(StringBuffer buffer) {
+    var isDartHandle = _getCReturnType(coreTypes, returnType) == 'Dart_Handle';
+
+    if (isDartHandle) {
+      buffer.write('Dart_NewPersistentHandle(');
+    }
     buffer.write('Dart_Invoke(');
     _writeTarget(buffer);
     buffer.write(', Dart_NewStringFromCString("$baseName"), ');
     _writeArgumentsListCountAndPointer(buffer);
     buffer.write(')');
+    if (isDartHandle) {
+      buffer.write(')');
+    }
   }
 }
