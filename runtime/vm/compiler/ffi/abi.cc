@@ -23,6 +23,7 @@ struct AbiAlignmentUint64 {
   uint64_t i;
 };
 
+#if !defined(DART_HOST_OS_WATCH)
 #if defined(HOST_ARCH_X64) || defined(HOST_ARCH_ARM64) ||                      \
     defined(HOST_ARCH_RISCV32) || defined(HOST_ARCH_RISCV64)
 static_assert(offsetof(AbiAlignmentDouble, d) == 8,
@@ -45,6 +46,7 @@ static_assert(offsetof(AbiAlignmentUint64, i) == 8,
               "FFI transformation alignment");
 #else
 #error "Unknown platform. Please add alignment requirements for ABI."
+#endif
 #endif
 
 #if defined(DART_TARGET_OS_ANDROID)
