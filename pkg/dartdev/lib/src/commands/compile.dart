@@ -10,8 +10,10 @@ import 'package:dart2native/generate.dart';
 import 'package:front_end/src/api_prototype/compiler_options.dart'
     show Verbosity;
 import 'package:path/path.dart' as path;
+import 'package:vm/target_architecture.dart';
 import 'package:vm/target_os.dart'; // For possible --target-os values.
 
+import '../cache.dart';
 import '../core.dart';
 import '../experiments.dart';
 import '../native_assets.dart';
@@ -450,6 +452,7 @@ class CompileJitSnapshotCommand extends CompileSubcommandCommand {
 class CompileNativeCommand extends CompileSubcommandCommand {
   static const String exeCmdName = 'exe';
   static const String aotSnapshotCmdName = 'aot-snapshot';
+  static const supportedTargetPlatforms = {'linux_arm64', 'linux_x64'};
 
   final String commandName;
   final Kind format;
@@ -526,6 +529,11 @@ Remove debugging information from the output and save it separately to the speci
       ..addOption('target-os',
           help: 'Compile to a specific target operating system.',
           allowed: TargetOS.names)
+      ..addOption('target-arch',
+          help: 'Compile to a specific target architecture.',
+          allowed: TargetArchitecture.names)
+      ..addFlag('experimental-cross-compilation',
+          hide: true, help: 'Pass to enable cross-compilation.')
       ..addExperimentalFlags(verbose: verbose);
   }
 
@@ -541,8 +549,7 @@ Remove debugging information from the output and save it separately to the speci
           "'dart compile $commandName' is not supported on x86 architectures.\n");
       return 64;
     }
-    if (!Sdk.checkArtifactExists(genKernel) ||
-        !Sdk.checkArtifactExists(genSnapshot)) {
+    if (!Sdk.checkArtifactExists(genKernel)) {
       return 255;
     }
     final args = argResults!;
@@ -595,24 +602,70 @@ Remove debugging information from the output and save it separately to the speci
       }
     }
 
-    String? targetOS = args.option('target-os');
-    if (format != Kind.exe) {
-      assert(format == Kind.aot);
-      // If we're generating an AOT snapshot and not an executable, then
-      // targetOS is allowed to be null for a platform-independent snapshot
-      // or a different platform than the host.
-    } else if (targetOS == null) {
-      targetOS = Platform.operatingSystem;
-    } else if (targetOS != Platform.operatingSystem) {
-      stderr.writeln(
-          "'dart compile $commandName' does not support cross-OS compilation.");
-      stderr.writeln('Host OS: ${Platform.operatingSystem}');
-      stderr.writeln('Target OS: $targetOS');
+    var targetOS = args.option('target-os');
+    var targetArch = args.option('target-arch');
+
+    var isCrossCompilation = false;
+    String? targetPlatform;
+    String? hostPlatform;
+
+    if (targetOS != null || targetArch != null) {
+      // One of the target options is explicitly passed,
+      // setting the remaining one to the host if necessary.
+      targetOS ??= ExtendedVersion.current.os;
+      targetArch ??= ExtendedVersion.current.arch;
+      targetPlatform = '${targetOS}_$targetArch';
+      hostPlatform = ExtendedVersion.current.platform;
+      isCrossCompilation = targetPlatform != hostPlatform;
+    }
+
+    if (isCrossCompilation && !args.flag('experimental-cross-compilation')) {
+      final targetPlatform = '${targetOS}_$targetArch';
+      final hostPlatform =
+          '${ExtendedVersion.current.os}_${ExtendedVersion.current.arch}';
+      stderr.writeln('Target platform ($targetPlatform) '
+          'does not match host platform ($hostPlatform).');
+      stderr.writeln('Native cross-compilation support is experimental, '
+          'pass --experimental-cross-compilation flag to enable it');
       return 128;
     }
+
+    if (isCrossCompilation &&
+        !supportedTargetPlatforms.contains(targetPlatform)) {
+      stderr.writeln('Unsupported target platform $targetPlatform.');
+      stderr.writeln('Supported cross compilation targets: '
+          '${supportedTargetPlatforms.join(', ')}');
+      return 128;
+    }
+    var genSnapshotBinary = genSnapshotHost;
+    var dartaotruntimeBinary = dartaotruntimeHost;
+
+    if (isCrossCompilation) {
+      final cache = Cache(path.join(sdk.sdkPath, 'bin', 'cache'));
+      final artifactGenSnapshot = genSnapshotArtifact(targetPlatform!, true);
+      if (verbose) {
+        log.stdout('Ensuring ${artifactGenSnapshot.fileName}...');
+      }
+      genSnapshotBinary = await cache.ensure(artifactGenSnapshot);
+
+      final artifactDartaotruntime =
+          dartaotruntimeArtifact(targetPlatform, true);
+      if (verbose) {
+        log.stdout('Ensuring ${artifactDartaotruntime.fileName}...');
+      }
+      dartaotruntimeBinary = await cache.ensure(artifactDartaotruntime);
+    }
+
+    if (format == Kind.exe && targetOS == null) {
+      // AOT snapshots allow null targetOS.
+      targetOS = Platform.operatingSystem;
+    }
+
     final tempDir = Directory.systemTemp.createTempSync();
     try {
       final kernelGenerator = KernelGenerator(
+        genSnapshot: genSnapshotBinary,
+        targetDartaotruntime: dartaotruntimeBinary,
         kind: format,
         sourceFile: sourcePath,
         outputFile: args.option('output'),

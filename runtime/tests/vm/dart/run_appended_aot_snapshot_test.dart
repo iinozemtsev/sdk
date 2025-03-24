@@ -49,7 +49,7 @@ Future<void> main(List<String> args) async {
       Expect.equals(result.exitCode, 0);
     }
 
-    await writeAppendedExecutable(dartPrecompiledRuntime, aotPath, exePath);
+    await writeAppendedExecutable(Platform.operatingSystem, dartPrecompiledRuntime, aotPath, exePath);
 
     if (Platform.isLinux || Platform.isMacOS) {
       final result = await markExecutable(exePath);

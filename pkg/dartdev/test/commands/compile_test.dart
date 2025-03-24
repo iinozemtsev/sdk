@@ -7,6 +7,7 @@ import 'dart:math';
 
 import 'package:dart2native/dart2native_macho.dart' show pipeStream;
 import 'package:dart2native/macho.dart';
+import 'package:dartdev/src/sdk.dart' show ExtendedVersion;
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
@@ -29,10 +30,12 @@ String usingTargetOSMessageForPlatform(String targetOS) =>
     'Specializing Platform getters for target OS $targetOS.';
 final String usingTargetOSMessage =
     usingTargetOSMessageForPlatform(Platform.operatingSystem);
-String crossOSNotAllowedError(String command) =>
-    "'dart compile $command' does not support cross-OS compilation.";
-final String hostOSMessage = 'Host OS: ${Platform.operatingSystem}';
-String targetOSMessage(String targetOS) => 'Target OS: $targetOS';
+const crossOSExperimentalError =
+    'Native cross-compilation support is experimental';
+
+final String hostPlatform = ExtendedVersion.current.platform;
+String targetOSPlatform(String targetOS) =>
+    '${targetOS}_${ExtendedVersion.current.arch}';
 
 void defineCompileTests() {
   final isRunningOnIA32 = Platform.version.contains('ia32');
@@ -433,9 +436,9 @@ void defineCompileTests() {
     );
 
     expect(result.stdout, isNot(contains(usingTargetOSMessage)));
-    expect(result.stderr, contains(crossOSNotAllowedError('exe')));
-    expect(result.stderr, contains(hostOSMessage));
-    expect(result.stderr, contains(targetOSMessage(targetOS)));
+    expect(result.stderr, contains(crossOSExperimentalError));
+    expect(result.stderr, contains(hostPlatform));
+    expect(result.stderr, contains(targetOSPlatform(targetOS)));
     expect(result.exitCode, 128);
   }, skip: isRunningOnIA32);
 

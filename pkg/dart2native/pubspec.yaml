@@ -13,9 +13,10 @@ executables:
 
 # Use 'any' constraints here; we get our versions from the DEPS file.
 dependencies:
-   collection: any
-   kernel: any
-   path: any
+  collection: any
+  kernel: any
+  path: any
+  vm: any
 
 # Use 'any' constraints here; we get our versions from the DEPS file.
 dev_dependencies:

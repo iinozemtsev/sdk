@@ -269,3 +269,54 @@ class Runtime {
     return Runtime._(version, channel);
   }
 }
+
+class ExtendedVersion {
+  final String version;
+  final String channel;
+  final String os;
+  final String arch;
+  final String? commitId;
+
+  String get platform => '${os}_$arch';
+
+  ExtendedVersion._(
+      {required this.version,
+      required this.channel,
+      required this.os,
+      required this.arch,
+      required this.commitId});
+
+  static ExtendedVersion parse([String? versionString]) {
+    versionString ??= Platform.version;
+    final pattern = RegExp(
+        r'^(?<version>[^ ]+) \((?<channel>[^)]+)\) \((?<date>[^)]+)\) on \"(?<os>[^_]+)_(?<arch>[^_]+)\"$');
+    final match = pattern.firstMatch(versionString);
+    if (match == null) {
+      throw ArgumentError('Cannot parse version: $versionString');
+    }
+
+    final version = match.namedGroup('version')!;
+    final channel = match.namedGroup('channel')!;
+    final os = match.namedGroup('os')!;
+    final arch = match.namedGroup('arch')!;
+
+    String? commitId;
+    if (channel == 'main') {
+      final mainVersionPattern = RegExp(r'\d+\.\d+\.\d+-edge\.(?<commitId>.*)');
+      final mainVersionMatch = mainVersionPattern.firstMatch(version);
+      if (mainVersionMatch == null) {
+        throw ArgumentError('Cannot parse main version: $versionString');
+      }
+      commitId = mainVersionMatch.namedGroup('commitId');
+    }
+
+    return ExtendedVersion._(
+        version: version,
+        channel: channel,
+        os: os,
+        arch: arch,
+        commitId: commitId);
+  }
+
+  static ExtendedVersion current = ExtendedVersion.parse();
+}

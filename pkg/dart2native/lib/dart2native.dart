@@ -19,7 +19,7 @@ final genKernel = path.join(
   'snapshots',
   'gen_kernel_aot.dart.snapshot',
 );
-final genSnapshot = path.join(
+final genSnapshotHost = path.join(
   binDir.path,
   'utils',
   'gen_snapshot$executableSuffix',
@@ -68,11 +68,12 @@ Future<void> writeAppendedExecutable(
   String dartaotruntime,
   String payloadPath,
   String outputPath,
+  String targetOS,
 ) async {
-  if (Platform.isMacOS) {
+  if (targetOS == 'macos') {
     return await writeAppendedMachOExecutable(
         dartaotruntime, payloadPath, outputPath);
-  } else if (Platform.isWindows) {
+  } else if (targetOS == 'windows') {
     return await writeAppendedPortableExecutable(
         dartaotruntime, payloadPath, outputPath);
   }
@@ -149,6 +150,7 @@ Future<ProcessResult> generateKernelHelper({
 }
 
 Future<ProcessResult> generateAotSnapshotHelper(
+    String genSnapshot,
     String kernelFile,
     String snapshotFile,
     String? debugFile,

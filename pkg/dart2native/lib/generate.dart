@@ -9,9 +9,9 @@ import 'package:path/path.dart' as path;
 import 'dart2native.dart';
 import 'src/generate_utils.dart';
 
-export 'dart2native.dart' show genKernel, genSnapshot;
+export 'dart2native.dart' show genKernel, genSnapshotHost;
 
-final dartaotruntime = path.join(
+final dartaotruntimeHost = path.join(
   binDir.path,
   'dartaotruntime$executableSuffix',
 );
@@ -34,6 +34,8 @@ enum Kind {
 /// See also the docs for [_Generator].
 extension type KernelGenerator._(_Generator _generator) {
   KernelGenerator({
+    required String genSnapshot,
+    required String targetDartaotruntime,
     required String sourceFile,
     required List<String> defines,
     Kind kind = Kind.exe,
@@ -48,6 +50,8 @@ extension type KernelGenerator._(_Generator _generator) {
     String verbosity = 'all',
     required Directory tempDir,
   }) : _generator = _Generator(
+          genSnapshot: genSnapshot,
+          targetDartaotruntime: targetDartaotruntime,
           sourceFile: sourceFile,
           defines: defines,
           tempDir: tempDir,
@@ -153,7 +157,15 @@ class _Generator {
   /// The path to the [depfile](https://ninja-build.org/manual.html#_depfile).
   final String? _depFile;
 
+  /// The path to the `gen_snapshot` tool.
+  final String _genSnapshot;
+
+  /// The path to the `dartaotruntime` for a target platform.
+  final String _targetDartaotruntime;
+
   _Generator({
+    required String genSnapshot,
+    required String targetDartaotruntime,
     required String sourceFile,
     required List<String> defines,
     required Kind kind,
@@ -180,13 +192,12 @@ class _Generator {
         _depFile = depFile,
         _programKernelFile = path.join(tempDir.path, 'program.dill'),
         _sourcePath = _normalize(sourceFile)!,
-        _packages = _normalize(packages) {
+        _packages = _normalize(packages),
+        _genSnapshot = genSnapshot,
+        _targetDartaotruntime = targetDartaotruntime {
     if (_kind == Kind.exe) {
       if (_targetOS == null) {
         throw ArgumentError('targetOS must be specified for executables.');
-      } else if (_targetOS != Platform.operatingSystem) {
-        throw UnsupportedError(
-            'Cross compilation not supported for executables.');
       }
     }
   }
@@ -203,7 +214,7 @@ class _Generator {
     }
 
     final kernelResult = await generateKernelHelper(
-      dartaotruntime: dartaotruntime,
+      dartaotruntime: dartaotruntimeHost,
       sourceFile: _sourcePath,
       kernelFile: _programKernelFile,
       packages: _packages,
@@ -256,12 +267,13 @@ class _Generator {
 
     if (_verbose) {
       print('Compiling $_sourcePath to $outputPath using format $_kind:');
-      print('Generating AOT snapshot. $genSnapshot $extraOptions');
+      print('Generating AOT snapshot. $_genSnapshot $extraOptions');
     }
     final snapshotFile = _kind == Kind.aot
         ? outputPath
         : path.join(_tempDir.path, 'snapshot.aot');
     final snapshotResult = await generateAotSnapshotHelper(
+      _genSnapshot,
       kernelFile,
       snapshotFile,
       debugPath,
@@ -280,7 +292,8 @@ class _Generator {
       if (_verbose) {
         print('Generating executable.');
       }
-      await writeAppendedExecutable(dartaotruntime, snapshotFile, outputPath);
+      await writeAppendedExecutable(
+          _targetDartaotruntime, snapshotFile, outputPath, _targetOS!);
 
       if (Platform.isLinux || Platform.isMacOS) {
         if (_verbose) {
@@ -302,7 +315,7 @@ class _Generator {
       final nativeAssetsDillFile =
           path.join(_tempDir.path, 'native_assets.dill');
       final kernelResult = await generateKernelHelper(
-        dartaotruntime: dartaotruntime,
+        dartaotruntime: dartaotruntimeHost,
         kernelFile: nativeAssetsDillFile,
         packages: _packages,
         defines: _defines,
@@ -391,7 +404,7 @@ Future<void> generateKernel({
   packages = _normalize(packages);
 
   final kernelResult = await generateKernelHelper(
-    dartaotruntime: dartaotruntime,
+    dartaotruntime: dartaotruntimeHost,
     sourceFile: sourcePath,
     kernelFile: outputPath,
     packages: packages,
